@@ -7,7 +7,7 @@ Smart Variant Filtering uses machine learning algorithms trained on features fro
 
 SVF is available on github and also as a Public tool on Seven Bridges Public App gallery. It is completely open sourced and free to use by any party or conditions. The comparison results obtained during deep, 3-stage testing has proven that it outperforms the solutions currently used within the most of the secondary DNA analysis. Smart Variant Filtering increases the precision of called SNVs (removes false positives) for up to 0.2% while keeping the overall f-score higher by 0.12-0.27% than in the existing solutions. Indel precision is increased up to 7.8%, while f-score increasement is in range 0.1-3.2%.
 
-Detailed information about Smart Variant Filtering available in [white paper|https://www.sevenbridges.com/smart-variant-filtering/].
+Detailed information about Smart Variant Filtering available in [white paper](https://www.sevenbridges.com/smart-variant-filtering).
 
 ## Getting Started
 
