@@ -1,6 +1,6 @@
 """
 Usage:
-    svf_train.py [--table_indel STR] [--table_snv STR] [--vcf STR] [--table_val STR] [--alg_param_indel STR] [--alg_param_snv STR] [--num_features INT] [--verbose]
+    svf_train.py [--table_indel STR] [--table_snv STR] [--vcf STR] [--table_val STR] [--alg_param_indel STR] [--alg_param_snv STR] [--features_snv STR] [--features_indel STR] [--verbose]
 
 Description:
     Train a Smart Variant Filtration (SVF) model that will be used for filtering of VCF file
@@ -12,7 +12,8 @@ Arguments:
     --table_val STR           Table for validation when applying model
     --alg_param_indel STR     Comma separated list of algorithm and its parameters [default: ADA,150,1.0,SAMME]
     --alg_param_snv STR       Comma separated list of algorithm and its parameters [default: ADA,150,1.0,SAMME]
-    --num_features INT        Number of features to use from the tables. Database can be 7th feature. [default: 6]
+    --features_snv STR        Comma separated list of features used for SNVs [default: QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR]
+    --features_indel STR      Comma separated list of features used for indels [default: QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR]
 
 Options:
     -h, --help                      Show this help message and exit.
@@ -21,7 +22,7 @@ Options:
 
 Examples:
     python svf_train.py --table_indel data/wes/6_features/HG001_NIST7035_dbsnp_indels.table --table_snv data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.table --alg_param_indel MLP,250,logistic,sgd --alg_param_snv MLP,500,tanh,adam --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf
-    python svf_train.py --table_indel data/wes/7_features/HG002_oslo_exome_dbsnp_indels.table --table_snv data/wes/7_features/HG002_oslo_exome_dbsnp_SNVs.table --alg_param_indel MLP,10,logistic,sgd --alg_param_snv MLP,10,logistic,sgd --vcf data/wes/7_features/HG001_NIST7035_raw.dbsnp.vcf --num_features 7
+    python svf_train.py --table_indel data/wes/7_features/HG002_oslo_exome_dbsnp_indels.table --table_snv data/wes/7_features/HG002_oslo_exome_dbsnp_SNVs.table --alg_param_indel MLP,10,logistic,sgd --alg_param_snv MLP,10,logistic,sgd --vcf data/wes/7_features/HG001_NIST7035_raw.dbsnp.vcf --features_snv QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR,dbSNPBuildID --features_indel QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR,dbSNPBuildID
 
 """
 
@@ -62,29 +63,33 @@ def build_model(alg_param):
 
 args = docopt(__doc__, version='1.0')
 verbose = args['--verbose']
-num_features = int(args['--num_features'])
 
 variant_tables = []
+features_list = []
 if args['--table_snv']:
     variant_tables.append(args['--table_snv'])
+    features_list.append(args['--features_snv'])
 if args['--table_indel']:
     variant_tables.append(args['--table_indel'])
+    features_list.append(args['--features_indel'])
 alg_params = [args['--alg_param_snv'], args['--alg_param_indel']]
 
 for i in range(0, len(variant_tables)):
     variant_table = variant_tables[i]
     alg_param = alg_params[i]
-    df = pandas.read_csv(variant_table, sep = '\t')
-    df.__delitem__('CHROM')
-    df.__delitem__('POS')
-    df = df.fillna(0.)
+    df = pandas.read_csv(variant_table, sep='\t')
 
+    #assert(features_list in df.columns)
+    Y = df.iloc[:,-1]
+    df = df[features_list[i].split(',')]
+    df = df.fillna(0.)
+    num_features = len(features_list[i].split(','))
     array = df.values
     X = array[:,0:num_features]
-    if num_features > 6:
-        if df.columns[6] == 'dbSNPBuildID':
-            X[:,6][X[:,6] > 0] = 1.0 # Take into account only dbSNP membersip, does not metter which version
-    Y = array[:,len(array[0])-1]
+    for col_num in range(num_features):
+        if df.columns[col_num] == 'dbSNPBuildID':
+            X[:, col_num][X[:, col_num] > 0] = 1.0  # Take into account only dbSNP membersip, does not metter which version
+
     validation_size = 0.0
     seed = 7
     X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size, random_state=seed)
@@ -105,10 +110,10 @@ for i in range(0, len(variant_tables)):
 
 if args['--vcf']:
     if args['--table_val']:
-        sys.argv = ['svf_apply', '--vcf', args['--vcf'], '--table', args['--table_val'], '--num_features', args['--num_features'],
+        sys.argv = ['svf_apply', '--vcf', args['--vcf'], '--table', args['--table_val'],
                 '--indel_model', fname_model_indel, '--snv_model', fname_model_snv, '--verbose']
     else:
-        sys.argv = ['svf_apply', '--vcf', args['--vcf'], '--num_features', args['--num_features'],
+        sys.argv = ['svf_apply', '--vcf', args['--vcf'],
                 '--indel_model', fname_model_indel, '--snv_model', fname_model_snv, '--verbose']
     execfile('svf_apply.py')
 

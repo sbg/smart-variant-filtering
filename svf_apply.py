@@ -1,6 +1,6 @@
 """
 Usage:
-    svf_apply.py (--vcf STR) [--table STR] (--indel_model STR) (--snv_model STR) [--num_features INT] [--discard_existing_filters] [--keep_database_variants] [--verbose]
+    svf_apply.py (--vcf STR) [--table STR] (--indel_model STR) (--snv_model STR) [--features_snv STR] [--features_indel STR] [--discard_existing_filters] [--keep_database_variants] [--verbose]
 
 Description:
     Apply Smart Variant Filtering (SVF) traing models on input VCF
@@ -10,9 +10,10 @@ Arguments:
     --table STR                     Table with categorized variants, same as in VCF used for validation
     --indel_model STR               Path to the classification model for indels
     --snv_model STR                 Path to the classification model for SNVs
-    --num_features INT              Number of features to use from the tables [default: 6]
     --discard_existing_filters      Discard filters found in VCF [Default: False]
     --keep_database_variants           Keep all called variants that exist in dbsnp
+    --features_snv STR        Comma separated list of features used for SNVs [default: QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR]
+    --features_indel STR      Comma separated list of features used for indels [default: QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR]
 
 Options:
     -h, --help                      Show this help message and exit.
@@ -21,8 +22,8 @@ Options:
 
 Examples:
     python svf_apply.py --vcf <raw_vcf> --indel_model indels.sav --snv_model SNVs.sav
-    python svf_apply.py --snv_model data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav --indel_model data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf --num_features 6
-    python svf_apply.py --snv_model data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav --indel_model data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf --num_features 7 --discard_existing_filters
+    python svf_apply.py --snv_model data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav --indel_model data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf
+    python svf_apply.py --snv_model data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav --indel_model data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf --discard_existing_filters
 
 """
 
@@ -51,7 +52,6 @@ args = docopt(__doc__, version='1.0')
 verbose = args['--verbose']
 vcf = args['--vcf']
 validation_table = args['--table']#'small.table'#'HG005_oslo_exome_raw_conf.table'#args['--table']
-num_features = int(args['--num_features'])
 discard_existing_filters = args['--discard_existing_filters']
 keep_database_variants = args['--keep_database_variants']
 #Optional read of validation table to pandas dataframe
@@ -73,8 +73,12 @@ filename = vcf.split('/').pop()
 basename = '.'.join(filename.split('.')[0:-1])
 out_name = basename + '.svf.vcf'
 
-fields = ['QD', 'MQ', 'FS',	'MQRankSum', 'ReadPosRankSum', 'SOR', 'dbSNPBuildID']
-fields = fields[0:num_features]
+features_snv = args['--features_snv'].split(',')
+features_indel = args['--features_indel'].split(',')
+
+
+# fields = ['QD', 'MQ', 'FS',	'MQRankSum', 'ReadPosRankSum', 'SOR', 'dbSNPBuildID']
+# fields = fields[0:num_features]
 
 ep = {} # Extracted parameters from VCF
 
@@ -87,7 +91,7 @@ unclassified = 0
 y_predictions = []
 ln_cnt = 0
 not_pres = {}
-for ff in fields:
+for ff in set(features_snv + features_indel):
     not_pres[ff] = 0
 
 with open(vcf, 'r') as main, open(out_name, 'w') as out:
@@ -113,6 +117,13 @@ with open(vcf, 'r') as main, open(out_name, 'w') as out:
             else:
                 is_snv = len(REF) == 1 and len(REF.replace('.','')) == len(ALT.replace('.',''))
             # Collect necessary params from VCF INFO field
+            if is_snv:
+                num_features = len(features_snv)
+                fields = features_snv
+            else:
+                num_features = len(features_indel)
+                fields = features_indel
+
             params_line = [0.] * num_features
             cnt = 0
             for f in fields:
