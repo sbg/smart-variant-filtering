@@ -33,3 +33,9 @@ and for performing a filtering:
 python svf_apply.py --snv_model data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav --indel_model data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf
     
 ```
+## Models
+This repository contains pre-trained models for SNVs and indels, for whole genome sequencing (WGS) and whole exome sequencing (WES) samples. 
+7 features are used for training the models: QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR and dbSNPBuildId.
+6 features were used for training the WGS model (QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR) with the following samples and library preps: HG001-NA12878-50x, HG003-60x, HG004-60x, HG005-60x, HG001-CEPH-30x, HG001-Robot-30x, HG001-ERR17432-150x.
+7 features were used for training the WES model (QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR,dbSNPBuildId) with the following samples and library preps: HG001-NA12878Rep1-S1-L00R-140x, HG003-oslo-190x, HG004-oslo-190x, HG005-oslo-190x.
+
