@@ -93,6 +93,7 @@ ln_cnt = 0
 not_pres = {}
 for ff in set(features_snv + features_indel):
     not_pres[ff] = 0
+af_fix = lambda x: np.float(x.split(',')[1]) if ',' in str(x) else np.float(x)
 
 with open(vcf, 'r') as main, open(out_name, 'w') as out:
     for line in main:
@@ -131,7 +132,7 @@ with open(vcf, 'r') as main, open(out_name, 'w') as out:
                 for info_field in INFO.split(';'):
                     if info_field.split('=')[0] == f:
                         feature_val = info_field.split('=')[1]
-                        params_line[cnt] = (float(feature_val))
+                        params_line[cnt] = af_fix(feature_val)
                         break  # Feature found - exit the inner loop
                 if f == 'dbSNPBuildID' and params_line[cnt] > 0.:
                     params_line[cnt] = 1.0  # Discard info about dbsnp revision

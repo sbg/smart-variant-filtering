@@ -73,11 +73,12 @@ if args['--table_indel']:
     variant_tables.append(args['--table_indel'])
     features_list.append(args['--features_indel'])
 alg_params = [args['--alg_param_snv'], args['--alg_param_indel']]
+af_fix = lambda x: float(x.split(',')[1]) if ',' in str(x) else float(x)
 
 for i in range(0, len(variant_tables)):
     variant_table = variant_tables[i]
     alg_param = alg_params[i]
-    df = pandas.read_csv(variant_table, sep='\t')
+    df = pandas.read_csv(variant_table, sep='\t', dtype=str)
 
     #assert(features_list in df.columns)
     Y = df.iloc[:,-1]
@@ -89,6 +90,8 @@ for i in range(0, len(variant_tables)):
     for col_num in range(num_features):
         if df.columns[col_num] == 'dbSNPBuildID':
             X[:, col_num][X[:, col_num] > 0] = 1.0  # Take into account only dbSNP membersip, does not metter which version
+        elif df.columns[col_num] == 'AF':
+            X[:, col_num] = map(af_fix, X[:, col_num])
 
     validation_size = 0.0
     seed = 7
