@@ -46,6 +46,8 @@ import pickle
 import sys
 from docopt import docopt
 from sklearn.preprocessing import StandardScaler
+if sys.version_info > (3, 0):
+    from past.builtins import execfile
 
 def build_model(alg_param):
     alg = alg_param.split(',')[0]
@@ -73,7 +75,7 @@ if args['--table_indel']:
     variant_tables.append(args['--table_indel'])
     features_list.append(args['--features_indel'])
 alg_params = [args['--alg_param_snv'], args['--alg_param_indel']]
-af_fix = lambda x: float(x.split(',')[1]) if ',' in str(x) else float(x)
+multiple_val_fix = lambda x: float(x.split(',')[1]) if ',' in str(x) else float(x)
 
 for i in range(0, len(variant_tables)):
     variant_table = variant_tables[i]
@@ -85,13 +87,18 @@ for i in range(0, len(variant_tables)):
     df = df[features_list[i].split(',')]
     df = df.fillna(0.)
     num_features = len(features_list[i].split(','))
-    array = df.values
-    X = array[:,0:num_features]
-    for col_num in range(num_features):
-        if df.columns[col_num] == 'dbSNPBuildID':
-            X[:, col_num][X[:, col_num] > 0] = 1.0  # Take into account only dbSNP membersip, does not metter which version
-        elif df.columns[col_num] == 'AF':
-            X[:, col_num] = map(af_fix, X[:, col_num])
+    # array = df.values
+    # X = df #array[:,0:num_features]
+    X = df.applymap(multiple_val_fix) # map(multiple_val_fix, df)
+
+    if 'dbSNPBuildID' in X.columns:
+        X['dbSNPBuildID'] = X['dbSNPBuildID'].map(lambda x: 1.0 if x > 0 else 0.)
+    # for col_num in range(num_features):
+    #     if X.columns[col_num] == 'dbSNPBuildID':
+    #         X[:, col_num][X[:, col_num] > 0] = 1.0  # Take into account only dbSNP membersip, does not metter which version
+        #elif df.columns[col_num] == 'AF':
+        #    X[:, col_num] = map(multiple_val_fix, X[:, col_num])
+
 
     validation_size = 0.0
     seed = 7
@@ -114,10 +121,14 @@ for i in range(0, len(variant_tables)):
 if args['--vcf']:
     if args['--table_val']:
         sys.argv = ['svf_apply', '--vcf', args['--vcf'], '--table', args['--table_val'],
-                '--indel_model', fname_model_indel, '--snv_model', fname_model_snv, '--verbose']
+                '--indel_model', fname_model_indel, '--snv_model', fname_model_snv, '--verbose',
+                '--features_snv', args['--features_snv'], '--features_indel', args['--features_indel'],
+                    '--discard_existing_filters']
     else:
         sys.argv = ['svf_apply', '--vcf', args['--vcf'],
-                '--indel_model', fname_model_indel, '--snv_model', fname_model_snv, '--verbose']
+                '--indel_model', fname_model_indel, '--snv_model', fname_model_snv, '--verbose',
+                '--features_snv', args['--features_snv'], '--features_indel', args['--features_indel'],
+                '--discard_existing_filters']
     execfile('svf_apply.py')
 
 

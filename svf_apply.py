@@ -43,6 +43,8 @@ from sklearn.svm import SVC
 import pickle
 import numpy as np
 from docopt import docopt
+from collections import defaultdict
+import sys
 
 def vprint(out, verbose):
     if verbose:
@@ -64,13 +66,17 @@ if validation_table:
 
 # load the model from disk
 fname_model_snv = args['--snv_model']
-loaded_model_snv = pickle.load(open(fname_model_snv, 'rb'))
 fname_model_indel = args['--indel_model']
-loaded_model_indel = pickle.load(open(fname_model_indel, 'rb'))
+if sys.version_info > (3, 0):
+    loaded_model_snv = pickle.load(open(fname_model_snv, 'rb'), encoding='latin1')
+    loaded_model_indel = pickle.load(open(fname_model_indel, 'rb'), encoding='latin1')
+else:
+    loaded_model_snv = pickle.load(open(fname_model_snv, 'rb'))
+    loaded_model_indel = pickle.load(open(fname_model_indel, 'rb'))
 
 # Parse file input name and create output name
 filename = vcf.split('/').pop()
-basename = '.'.join(filename.split('.')[0:-1])
+basename = '.'.join(filename.split('.')[0:-1]) if filename.split('.')[-1] == 'vcf' else filename
 out_name = basename + '.svf.vcf'
 
 features_snv = args['--features_snv'].split(',')
@@ -93,7 +99,7 @@ ln_cnt = 0
 not_pres = {}
 for ff in set(features_snv + features_indel):
     not_pres[ff] = 0
-af_fix = lambda x: np.float(x.split(',')[1]) if ',' in str(x) else np.float(x)
+multiple_val_fix = lambda x: np.float(x.split(',')[1]) if ',' in str(x) else np.float(x)
 
 with open(vcf, 'r') as main, open(out_name, 'w') as out:
     for line in main:
@@ -102,6 +108,9 @@ with open(vcf, 'r') as main, open(out_name, 'w') as out:
                 out.write(filter_line)
                 filter_written = True
 
+            if line.find('CHROM\tPOS') >= 0:
+                sample_names = line.rstrip().split('\t')[9:]
+
             out.write(line)
         else:
             ln_cnt += 1
@@ -109,6 +118,9 @@ with open(vcf, 'r') as main, open(out_name, 'w') as out:
             REF = parts[3]
             ALT = parts[4]
             INFO = parts[7]
+            FORMAT = parts[8]
+            SAMPLES = parts[9:]
+
             if ',' in ALT:
                 if len(ALT.split(',')[0]) == len(ALT.split(',')[1]):
                     alt_size = len(ALT.split(',')[0]) #max(ALT.split(','), key=len)
@@ -125,15 +137,19 @@ with open(vcf, 'r') as main, open(out_name, 'w') as out:
                 num_features = len(features_indel)
                 fields = features_indel
 
+            info_fields = defaultdict(lambda: 0.)
+            for info_field in INFO.split(';'):
+                info_fields[info_field.split('=')[0]] = info_field.split('=')[-1]
+            for sample_cnt in range(len(SAMPLES)):
+                for format_cnt in range(len(FORMAT.split(':'))):
+                    info_fields[sample_names[sample_cnt].rstrip() + '.' + FORMAT.split(':')[format_cnt]] = SAMPLES[sample_cnt].split(':')[format_cnt]
+
             params_line = [0.] * num_features
             cnt = 0
             for f in fields:
-                feature_found = False
-                for info_field in INFO.split(';'):
-                    if info_field.split('=')[0] == f:
-                        feature_val = info_field.split('=')[1]
-                        params_line[cnt] = af_fix(feature_val)
-                        break  # Feature found - exit the inner loop
+                feature_val = info_fields[f]
+                params_line[cnt] = multiple_val_fix(feature_val)
+
                 if f == 'dbSNPBuildID' and params_line[cnt] > 0.:
                     params_line[cnt] = 1.0  # Discard info about dbsnp revision
                 cnt += 1
