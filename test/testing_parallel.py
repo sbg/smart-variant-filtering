@@ -39,8 +39,8 @@ model_indels = ["../data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav",
                 "../models/model_6_features_wgs_indel.sav"]
 model_snvs = ["../data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav", "../models/model_6_features_wgs_snv.sav"]
 vcfs = ["../data/wes/6_features/HG005_oslo_exome_chr20.vcf",
-        "../data/wes/6_features/HG007.MOTHER.filtered.converted.medium.vcf"]
-num_processes = [2, 4, 8, 16, 32]
+        "../data/wes/7_features/HG001_NIST7035_raw.dbsnp.vcf"]
+num_processes = [1, 2, 4, 8, 16, 32]
 
 for idx, example in enumerate(list(itertools.product(*[model_indels, model_snvs, num_processes, vcfs]))):
     print("TESTING {}\n\tSVN: {}\n\tINDELS: {}\n\tVCF: {}\n\tPROCESSES: {}".format(idx, example[1], example[0],
