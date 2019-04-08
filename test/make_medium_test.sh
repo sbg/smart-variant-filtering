@@ -1,0 +1,1 @@
+head -485396 ../data/wes/6_features/HG007.MOTHER.filtered.converted.vcf > ../data/wes/6_features/HG007.MOTHER.filtered.converted.medium.vcf
