@@ -30,7 +30,7 @@ Examples:
 
 # Load libraries
 import pandas
-from pandas.plotting import scatter_matrix
+from pandas.tools.plotting import scatter_matrix
 from sklearn import model_selection
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
@@ -219,6 +219,7 @@ multiple_val_fix = lambda x: np.float(x.split(',')[1]) if ',' in str(x) else np.
 
 with open(vcf, 'r') as main, open(out_name, 'w') as out:
     start_pos = 0
+    main = main.readlines()
     for line in main:
         start_pos += 1
         if line.startswith('#'):
@@ -232,12 +233,12 @@ with open(vcf, 'r') as main, open(out_name, 'w') as out:
                 break
 
             out.write(line)
-    main = main.readlines()
-    chunk = int((len(main) + threads_num - 1) / threads_num)
+
+    chunk = int((len(main) - start_pos + threads_num - 1) / threads_num)
     process_pool = mp.Pool(processes=threads_num, maxtasksperchild=1)
 
     result_list = process_pool.map(processing_wrap,
-                                   ((main[line:line + chunk], line) for line in range(0, len(main), chunk)))
+                                   ((main[line:line + chunk], line) for line in range(start_pos, len(main), chunk)))
 
     for res in result_list:
         tp += res[0]
