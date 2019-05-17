@@ -55,3 +55,5 @@ This repository contains pre-trained models for SNVs and indels, for whole genom
 6 features were used for training the WGS model (QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR) with the following samples and library preps: HG001-NA12878-50x, HG003-60x, HG004-60x, HG005-60x, HG001-CEPH-30x, HG001-Robot-30x, HG001-ERR17432-150x.
 7 features were used for training the WES model (QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR,dbSNPBuildId) with the following samples and library preps: HG001-NA12878Rep1-S1-L00R-140x, HG003-oslo-190x, HG004-oslo-190x, HG005-oslo-190x.
 
+## Slides and video
+Presentation of work done on parallelizing the tool (slides and video): [link](https://www.dropbox.com/sh/9flk1ly3ehcjpnk/AAD_PctO8N-yC4UfHsJuetiua?dl=0)
