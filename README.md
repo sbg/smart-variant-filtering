@@ -33,6 +33,22 @@ and for performing a filtering:
 python svf_apply.py --snv_model data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav --indel_model data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf
     
 ```
+
+Performing the filtering step can be done in parallel with at most 64 threads with:
+```
+python svf_apply_parallel.py --snv_model data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav --indel_model data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf --threads 32
+```
+
+## Testing
+Provided python script tests parallel version of filtering with the sequential one. It uses two different vcf files, with two models and number of threads in set ```[1, 2, 4, 8, 16, 32]```.
+Testing is done by running the python code:
+``` python testing_parallel.py ``` 
+
+## Benchmarks
+The benchmarks folder contains graphs of execution speed comparison to the number of threads running on three dataset sizes. The benchmark has been executed on Cancer Genomics Cloud instance c3.8xlarge (32vCPU).
+Dataset used: The smallest input vcf file is provided in the ```data/wes/6_features/``` directory. The largest can be downloaded from [here](https://studentetfbgacrs-my.sharepoint.com/:u:/g/personal/mm183066m_student_etf_bg_ac_rs/EfhhU5O-KxJLvAqDlpGxhz8BhqDfUU5YxWpe6aXYwj6sgw?e=V74xUh), and the medium sized file can be created by running the script:
+``` ./make_medium_test.sh ```
+
 ## Models
 This repository contains pre-trained models for SNVs and indels, for whole genome sequencing (WGS) and whole exome sequencing (WES) samples. 
 7 features are used for training the models: QD,MQ,FS,MQRankSum,ReadPosRankSum,SOR and dbSNPBuildId.
