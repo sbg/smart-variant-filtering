@@ -38,6 +38,25 @@ Performing the filtering step can be done in parallel with at most 64 threads wi
 ```
 python svf_apply_parallel.py --snv_model data/wes/6_features/HG001_NIST7035_dbsnp_SNVs.snv.sav --indel_model data/wes/6_features/HG001_NIST7035_dbsnp_indels.indel.sav --vcf data/wes/6_features/HG005_oslo_exome_chr20.vcf --threads 32
 ```
+Read more about recommended number of threads and methods used for parallel execution in the "Parallelisation" section.
+
+## Parallelisation
+### Idea - source of parallelism
+In the sequential implementation, the input file is sequentially processed line by line and each line is filtered independently. This is a great and easily exploited source of parallelism, as the processing function used in sequential implementation can be rewritten to accommodate for parallel chunk processing, without need for complex synchronization between worker threads and avoiding shared memory variables.
+
+###Implementation
+Parallel version of the tool processes the header of the input file in the main thread, but  then splits the lines of the input file into chunks. To exploit the underlying parallelism of the Variant filtering problem, these chunks of total work are then delegated to worker threads created by using an  implementation of the [**Thread pool**](https://en.wikipedia.org/wiki/Thread_pool) design pattern. The number of created worker threads is equal to the amount of threads specified to be used for parallelisation.
+
+After a worker thread finishes processing the designated chunk, the result is stored in a dedicated slot and the worker thread is joined to the main thread. After all the chunks are processed, the main thread continues executing and collects the partial  results from the dedicated slots, performs some simple aftercomputations and returns the result which is equal to the result produced by the sequential implementation, but reached substantially faster, as can be seen in the [benchmarks folder](https://github.com/sbg/smart-variant-filtering/tree/master/data/benchmarks).
+
+### How many threads should you use?
+In parallelisation problems, more threads don't always result in faster execution times. As stated by the [Amdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law), the execution time of a program is bounded by the time needed for the execution of the sequential component. In other words, there is a limit to the speedup achievable with thread number increase and the limit is caused by the component of the program which is not or can not be parallelised. In case of SVF, this component that limits speedup is the task of processing the input file header. 
+
+Independent of the size of input file, the effects of saturation start when using 16 threads, as can be seen in the [benchmarks folder](https://github.com/sbg/smart-variant-filtering/tree/master/data/benchmarks). Therefore, using more than 16 threads should not be expected to yield further improvements on execution time of SVF.
+
+Furthermore, the number of threads to be used for parallelisation depends on the machine executing the script. Each CPU has a set number of logical cores, that number being a limit to how many different threads can be executed at the same time. This forms a bottleneck on the possible speedup due to multithreaded execution, resulting in drastic speedup saturation when using a number of threads greater than the number of logical cores of the CPU. 
+
+To summarize, the recommended value of the ```threads_num``` parameter is ```min(16, logical_core_count)```, where ```logical_core_count``` denotes the number of logical cores of the CPU on which script is executed.  
 
 ## Testing
 Provided python script tests parallel version of filtering with the sequential one. It uses two different vcf files, with two models and number of threads in set ```[1, 2, 4, 8, 16, 32]```.
