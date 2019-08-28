@@ -45,7 +45,7 @@ Read more about recommended number of threads and methods used for parallel exec
 ### Idea - source of parallelism
 In the sequential implementation, the input file is sequentially processed line by line and each line is filtered independently. This is a great and easily exploited source of parallelism, as the processing function used in sequential implementation can be rewritten to accommodate for parallel chunk processing, without need for complex synchronization between worker threads and avoiding shared memory variables.
 
-###Implementation
+### Implementation
 Parallel version of the tool processes the header of the input file in the main thread, but  then splits the lines of the input file into chunks. To exploit the underlying parallelism of the Variant filtering problem, these chunks of total work are then delegated to worker threads created by using an  implementation of the [**Thread pool**](https://en.wikipedia.org/wiki/Thread_pool) design pattern. The number of created worker threads is equal to the amount of threads specified to be used for parallelisation.
 
 After a worker thread finishes processing the designated chunk, the result is stored in a dedicated slot and the worker thread is joined to the main thread. After all the chunks are processed, the main thread continues executing and collects the partial  results from the dedicated slots, performs some simple aftercomputations and returns the result which is equal to the result produced by the sequential implementation, but reached substantially faster, as can be seen in the [benchmarks folder](https://github.com/sbg/smart-variant-filtering/tree/master/data/benchmarks).
