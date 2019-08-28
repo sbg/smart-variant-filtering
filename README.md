@@ -41,6 +41,7 @@ python svf_apply_parallel.py --snv_model data/wes/6_features/HG001_NIST7035_dbsn
 Read more about recommended number of threads and methods used for parallel execution in the "Parallelisation" section.
 
 ## Parallelisation
+
 ### Idea - source of parallelism
 In the sequential implementation, the input file is sequentially processed line by line and each line is filtered independently. This is a great and easily exploited source of parallelism, as the processing function used in sequential implementation can be rewritten to accommodate for parallel chunk processing, without need for complex synchronization between worker threads and avoiding shared memory variables.
 
