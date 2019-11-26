@@ -217,10 +217,10 @@ for ff in set(features_snv + features_indel):
     not_pres[ff] = 0
 multiple_val_fix = lambda x: np.float(x.split(',')[1]) if ',' in str(x) else np.float(x)
 
-with open(vcf, 'r') as main, open(out_name, 'w') as out:
+with open(vcf, 'r') as vcf_fp, open(out_name, 'w') as out:
     start_pos = 0
-    main = main.readlines()
-    for line in main:
+    vcf_lines = vcf_fp.readlines()
+    for line in vcf_lines:
         start_pos += 1
         if line.startswith('#'):
             if (line.find('FILTER=<ID=') >= 0 or line.find('CHROM\tPOS') >= 0) and filter_written == False:
@@ -234,11 +234,11 @@ with open(vcf, 'r') as main, open(out_name, 'w') as out:
 
             out.write(line)
 
-    chunk = np.maximum(int((len(main) - start_pos + threads_num - 1) / threads_num), 1)
+    chunk = np.maximum(int((len(vcf_lines) - start_pos + threads_num - 1) / threads_num), 1)
     process_pool = mp.Pool(processes=threads_num, maxtasksperchild=1)
 
     result_list = process_pool.map(processing_wrap,
-                                   ((main[line:line + chunk], line) for line in range(start_pos, len(main), chunk)))
+                                   ((vcf_lines[line:line + chunk], line) for line in range(start_pos, len(vcf_lines), chunk)))
 
     for res in result_list:
         tp += res[0]
