@@ -193,7 +193,7 @@ else:
 # Parse file input name and create output name
 filename = vcf.split('/').pop()
 basename = '.'.join(filename.split('.')[0:-1]) if filename.split('.')[-1] == 'vcf' else filename
-out_name = basename + '.parallel.svf.vcf'
+out_name = basename + '.svf.vcf'
 
 features_snv = args['--features_snv'].split(',')
 features_indel = args['--features_indel'].split(',')
