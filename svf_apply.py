@@ -234,7 +234,7 @@ with open(vcf, 'r') as main, open(out_name, 'w') as out:
 
             out.write(line)
 
-    chunk = int((len(main) - start_pos + threads_num - 1) / threads_num)
+    chunk = np.maximum(int((len(main) - start_pos + threads_num - 1) / threads_num), 1)
     process_pool = mp.Pool(processes=threads_num, maxtasksperchild=1)
 
     result_list = process_pool.map(processing_wrap,
